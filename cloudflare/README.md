@@ -2,7 +2,7 @@
 
 CloudFlare provides free AI workers with limited renewable quotas that can be sufficient for personal projects.
 
-These AI workers can run many preinstalled models, including `@cf/llava-hf/llava-1.5-7b-hf` that can "see" images.
+These AI workers can run many [preinstalled models](https://developers.cloudflare.com/workers-ai/models/), including `@cf/llava-hf/llava-1.5-7b-hf` that can "see" images.
 
 ## Step by step setup
 
