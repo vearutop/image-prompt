@@ -80,6 +80,7 @@ func main() { //nolint:cyclop,funlen
 		if err != nil {
 			log.Fatal(err)
 		}
+		defer image.Close()
 	}
 
 	switch {
