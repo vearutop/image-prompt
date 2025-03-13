@@ -7,7 +7,6 @@ export default {
         }
 
         try {
-            const file = await request.text();
             const model = "@cf/llava-hf/llava-1.5-7b-hf"
 
             var prompt = request.headers.get("prompt")
@@ -15,7 +14,8 @@ export default {
                 prompt = "Generate a detailed caption for this image"
             }
 
-            const image = [...new Uint8Array(file.arrayBuffer)]
+            const file = await request.arrayBuffer();
+            const image = [...new Uint8Array(file)]
 
             var response = {}
             var now;
@@ -29,6 +29,7 @@ export default {
             response.elapsedTimeMs = new Date() - now;
             response.prompt = prompt;
             response.model = model
+            response.fileSize = file.byteLength
 
             return Response.json(response);
         }
