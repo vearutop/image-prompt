@@ -1,3 +1,4 @@
+// Package ollama provides a client to a local or remote self-hosted LLM service, see https://ollama.com/.
 package ollama
 
 import (
@@ -9,13 +10,24 @@ import (
 	"strings"
 )
 
+// ImagePrompter can ask LLM about an image.
 type ImagePrompter struct {
 	BaseURL   string            // default "http://localhost:11434/api/generate".
 	Model     string            // default "llava:7b".
 	Transport http.RoundTripper // default http.DefaultTransport.
 }
 
-func (ip *ImagePrompter) PromptImage(ctx context.Context, prompt string, image io.ReadCloser) (string, error) {
+// ModelName returns the name of LLM.
+func (ip *ImagePrompter) ModelName() string {
+	if ip.Model == "" {
+		return "llava:7b"
+	}
+
+	return ip.Model
+}
+
+// PromptImage asks LLM about JPEG image.
+func (ip *ImagePrompter) PromptImage(ctx context.Context, prompt string, jpegImage io.Reader) (string, error) {
 	type Req struct {
 		Model  string   `json:"model"`
 		Prompt string   `json:"prompt"`
@@ -23,12 +35,8 @@ func (ip *ImagePrompter) PromptImage(ctx context.Context, prompt string, image i
 		Images [][]byte `json:"images"`
 	}
 
-	cont, err := io.ReadAll(image)
+	cont, err := io.ReadAll(jpegImage)
 	if err != nil {
-		return "", err
-	}
-
-	if err := image.Close(); err != nil {
 		return "", err
 	}
 
@@ -68,7 +76,7 @@ func (ip *ImagePrompter) PromptImage(ctx context.Context, prompt string, image i
 		return "", err
 	}
 
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	cont, err = io.ReadAll(resp.Body)
 	if err != nil {

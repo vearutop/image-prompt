@@ -1,3 +1,4 @@
+// Package gemini implements LLM client for Google Gemini.
 package gemini
 
 import (
@@ -5,10 +6,11 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/vearutop/image-prompt/imageprompt"
 )
 
 // https://ai.google.dev/gemini-api/docs/vision?lang=rest&authuser=1
@@ -51,11 +53,13 @@ curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:g
     }' 2> /dev/null
 */
 
+// ImagePrompter can ask LLM about an image.
 type ImagePrompter struct {
 	AuthKey   string
 	Transport http.RoundTripper // default http.DefaultTransport.
 }
 
+// Response describes Gemini response.
 type Response struct {
 	Candidates []struct {
 		Content struct {
@@ -89,13 +93,15 @@ type Response struct {
 	ModelVersion string `json:"modelVersion"`
 }
 
-func (ip *ImagePrompter) PromptImage(ctx context.Context, prompt string, image io.ReadCloser) (string, error) {
-	img, err := io.ReadAll(image)
-	if err != nil {
-		return "", err
-	}
+// ModelName returns the name of LLM.
+func (ip *ImagePrompter) ModelName() string {
+	return "gemini-2.0-flash"
+}
 
-	if err := image.Close(); err != nil {
+// PromptImage asks LLM about JPEG image.
+func (ip *ImagePrompter) PromptImage(ctx context.Context, prompt string, jpegImage io.Reader) (string, error) {
+	img, err := io.ReadAll(jpegImage)
+	if err != nil {
 		return "", err
 	}
 
@@ -154,7 +160,7 @@ func (ip *ImagePrompter) PromptImage(ctx context.Context, prompt string, image i
 		return "", err
 	}
 
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	cont, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -168,12 +174,18 @@ func (ip *ImagePrompter) PromptImage(ctx context.Context, prompt string, image i
 	}
 
 	if len(re.Candidates) == 0 {
-		return "", errors.New("no candidates found")
+		return "", imageprompt.ErrUnexpectedResponse{
+			Message:      "no candidates found",
+			ResponseBody: cont,
+		}
 	}
 
 	c := re.Candidates[0]
 	if len(c.Content.Parts) == 0 {
-		return "", errors.New("no parts found")
+		return "", imageprompt.ErrUnexpectedResponse{
+			Message:      "no parts found",
+			ResponseBody: cont,
+		}
 	}
 
 	return strings.Trim(c.Content.Parts[0].Text, "\" \t\n"), nil

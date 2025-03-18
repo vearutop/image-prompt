@@ -1,3 +1,4 @@
+// Package cloudflare provides a client to self-hosted CloudFlare AI worker, see README.md for details.
 package cloudflare
 
 import (
@@ -10,9 +11,10 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/swaggest/usecase/status"
+	"github.com/vearutop/image-prompt/imageprompt"
 )
 
+// NewImagePrompter creates a client to self-hosted CloudFlare AI worker.
 func NewImagePrompter(baseURL string) (*ImagePrompter, error) {
 	if baseURL == "" {
 		return nil, errors.New("baseURL is empty")
@@ -29,31 +31,36 @@ func NewImagePrompter(baseURL string) (*ImagePrompter, error) {
 	baseURL = u.String()
 
 	return &ImagePrompter{
-		Auth:    auth,
+		AuthKey: auth,
 		BaseURL: baseURL,
 	}, nil
 }
 
+// ImagePrompter can ask LLM about an image.
 type ImagePrompter struct {
 	BaseURL   string
-	Auth      string
+	AuthKey   string
 	Transport http.RoundTripper // default http.DefaultTransport.
 }
 
-func (ip *ImagePrompter) PromptImage(ctx context.Context, prompt string, image io.ReadCloser) (string, error) {
+// ModelName returns the name of LLM.
+func (ip *ImagePrompter) ModelName() string {
+	return "@cf/llava-hf/llava-1.5-7b-hf"
+}
+
+// PromptImage asks LLM about JPEG image.
+func (ip *ImagePrompter) PromptImage(ctx context.Context, prompt string, jpegImage io.Reader) (string, error) {
 	baseURL := ip.BaseURL
 	if baseURL == "" {
 		return "", errors.New("baseURL is empty")
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL, image)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL, jpegImage)
 	if err != nil {
 		return "", err
 	}
 
-	defer image.Close()
-
-	req.Header.Set("Authorization", ip.Auth)
+	req.Header.Set("Authorization", ip.AuthKey)
 	req.Header.Set("Prompt", prompt)
 
 	tr := ip.Transport
@@ -66,7 +73,7 @@ func (ip *ImagePrompter) PromptImage(ctx context.Context, prompt string, image i
 		return "", err
 	}
 
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	cont, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -74,7 +81,7 @@ func (ip *ImagePrompter) PromptImage(ctx context.Context, prompt string, image i
 	}
 
 	if resp.StatusCode == http.StatusServiceUnavailable && bytes.Contains(cont, []byte("Worker exceeded resource limits")) {
-		return "", status.ResourceExhausted
+		return "", imageprompt.ErrResourceExhausted
 	}
 
 	type Resp struct {

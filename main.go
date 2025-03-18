@@ -21,6 +21,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -31,11 +32,18 @@ import (
 
 	"github.com/vearutop/image-prompt/cloudflare"
 	"github.com/vearutop/image-prompt/gemini"
+	"github.com/vearutop/image-prompt/imageprompt"
 	"github.com/vearutop/image-prompt/ollama"
 	"github.com/vearutop/image-prompt/openai"
 )
 
-func main() { //nolint:cyclop,funlen
+func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() (err error) { //nolint:cyclop,funlen
 	var (
 		prompt    string
 		model     string
@@ -54,55 +62,72 @@ func main() { //nolint:cyclop,funlen
 	if flag.NArg() != 1 {
 		flag.Usage()
 
-		return
+		return nil
 	}
 
 	img := flag.Arg(0)
 
 	var (
-		image io.ReadCloser
-		err   error
-		p     interface {
-			PromptImage(ctx context.Context, prompt string, image io.ReadCloser) (string, error)
-		}
+		image io.Reader
+		p     imageprompt.Prompter
 	)
 
 	if strings.HasPrefix(img, "http://") || strings.HasPrefix(img, "https://") {
 		resp, err := http.Get(img)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 
+		defer func() {
+			if e := resp.Body.Close(); e != nil {
+				err = errors.Join(err, e)
+			}
+		}()
+
 		image = resp.Body
-		defer image.Close()
 	} else {
-		image, err = os.Open(img)
+		f, err := os.Open(img)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
-		defer image.Close()
+
+		defer func() {
+			if e := f.Close(); e != nil {
+				err = errors.Join(err, e)
+			}
+		}()
+
+		image = f
 	}
 
 	switch {
 	case cfWorker != "":
 		p, err = cloudflare.NewImagePrompter(cfWorker)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 	case openaiKey != "":
 		p = &openai.ImagePrompter{AuthKey: openaiKey}
 	case geminiKey != "":
 		p = &gemini.ImagePrompter{AuthKey: geminiKey}
 	default:
-		p = &ollama.ImagePrompter{
-			Model: model,
-		}
+		p = &ollama.ImagePrompter{Model: model}
 	}
 
 	result, err := p.PromptImage(context.Background(), prompt, image)
 	if err != nil {
-		log.Fatal(err)
+		var ue imageprompt.ErrUnexpectedResponse
+		if errors.As(err, &ue) {
+			println(ue.Message)
+			println(string(ue.ResponseBody))
+
+			return err
+		}
+
+		return err
 	}
 
 	fmt.Println(result)
+
+	return nil
 }

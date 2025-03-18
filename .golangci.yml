@@ -18,6 +18,9 @@ linters-settings:
 linters:
   enable-all: true
   disable:
+    - funlen
+    - nestif
+    - cyclop
     - noctx
     - err113
     - gosec

@@ -1,3 +1,4 @@
+// Package openai provides OpenAI API client.
 package openai
 
 import (
@@ -11,30 +12,37 @@ import (
 	"strings"
 )
 
+// ImagePrompter can ask LLM about an image.
 type ImagePrompter struct {
 	AuthKey   string
 	Model     string            // default "gpt-4o-mini".
 	Transport http.RoundTripper // default http.DefaultTransport.
 }
 
-func (ip *ImagePrompter) PromptImage(ctx context.Context, prompt string, image io.ReadCloser) (string, error) {
-	img, err := io.ReadAll(image)
+// ModelName returns the name of LLM.
+func (ip *ImagePrompter) ModelName() string {
+	if ip.Model == "" {
+		return "gpt-4o-mini"
+	}
+
+	return ip.Model
+}
+
+// PromptImage asks LLM about JPEG image.
+func (ip *ImagePrompter) PromptImage(ctx context.Context, prompt string, jpegImage io.Reader) (string, error) {
+	img, err := io.ReadAll(jpegImage)
 	if err != nil {
 		return "", err
 	}
 
-	if err := image.Close(); err != nil {
-		return "", err
-	}
-
-	type ImageUrl struct {
-		Url string `json:"url"`
+	type ImageURL struct {
+		URL string `json:"url"`
 	}
 
 	type Content struct {
 		Type     string   `json:"type"`
 		Text     string   `json:"text,omitempty"`
-		ImageUrl ImageUrl `json:"image_url,omitempty"`
+		ImageURL ImageURL `json:"image_url,omitempty"`
 	}
 
 	type Message struct {
@@ -49,7 +57,7 @@ func (ip *ImagePrompter) PromptImage(ctx context.Context, prompt string, image i
 	}
 
 	type Response struct {
-		Id      string `json:"id"`
+		ID      string `json:"id"`
 		Object  string `json:"object"`
 		Created int    `json:"created"`
 		Model   string `json:"model"`
@@ -96,8 +104,8 @@ func (ip *ImagePrompter) PromptImage(ctx context.Context, prompt string, image i
 		Role: "user",
 		Content: []Content{
 			{Type: "text", Text: prompt},
-			{Type: "image_url", ImageUrl: ImageUrl{
-				Url: "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(img),
+			{Type: "image_url", ImageURL: ImageURL{
+				URL: "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(img),
 			}},
 		},
 	})
@@ -130,7 +138,7 @@ func (ip *ImagePrompter) PromptImage(ctx context.Context, prompt string, image i
 		return "", err
 	}
 
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	cont, err := io.ReadAll(resp.Body)
 	if err != nil {
