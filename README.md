@@ -64,8 +64,9 @@ Usage of image-prompt:
 
 ```
 image-prompt -prompt "What is this image about?" -gemini $GEMINI_API_KEY IMG_7452.1200w.jpg
-The image shows a man standing in a field of tall green grass. He is wearing a red t-shirt, patterned shorts, and a backpack. Behind him, there is a line of trees and a cloudy sky. He appears to be outdoors, possibly hiking or exploring.
 ```
+
+> The image shows a man standing in a field of tall green grass. He is wearing a red t-shirt, patterned shorts, and a backpack. Behind him, there is a line of trees and a cloudy sky. He appears to be outdoors, possibly hiking or exploring.
 
 ### OpenAI gpt-4o-mini
 
@@ -73,7 +74,7 @@ The image shows a man standing in a field of tall green grass. He is wearing a r
 image-prompt -prompt "What is this image about?" -openai $OPENAI_KEY IMG_7452.1200w.jpg
 ```
 
-The image depicts a man standing in a grassy field, wearing a red t-shirt and patterned shorts, with a backpack and a camera. The background features trees and a partly cloudy sky, indicating an outdoor setting, possibly in nature or a park. The composition suggests a moment of exploration or reflection in a natural environment.
+> The image depicts a man standing in a grassy field, wearing a red t-shirt and patterned shorts, with a backpack and a camera. The background features trees and a partly cloudy sky, indicating an outdoor setting, possibly in nature or a park. The composition suggests a moment of exploration or reflection in a natural environment.
 
 ### Ollama llava:13b
 
@@ -81,13 +82,14 @@ The image depicts a man standing in a grassy field, wearing a red t-shirt and pa
 image-prompt -prompt "What is this image about?" -model llava:13b IMG_7452.1200w.jpg
 ```
 
-The image shows a person standing in a field of tall grass, wearing a red top and a backpack. It appears to be an outdoor scene, possibly during the summer given the lush greenery around. The individual seems relaxed and casual, posing for the photographer. The background features a clear sky with some clouds and what looks like trees or bushes in the distance, which could suggest a rural setting. Without more context, it's difficult to determine the exact purpose of this image beyond a casual snapshot of someone enjoying an outdoor activity or journey.
+> The image shows a person standing in a field of tall grass, wearing a red top and a backpack. It appears to be an outdoor scene, possibly during the summer given the lush greenery around. The individual seems relaxed and casual, posing for the photographer. The background features a clear sky with some clouds and what looks like trees or bushes in the distance, which could suggest a rural setting. Without more context, it's difficult to determine the exact purpose of this image beyond a casual snapshot of someone enjoying an outdoor activity or journey.
 
 ### CloudFlare AI worker @cf/llava-hf/llava-1.5-7b-hf
 
 ```
 image-prompt -prompt "What is this image about?" -cf https://<redacted>@llava.<redacted>.workers.dev/ IMG_7452.1200w.jpg
-The image features a man standing in a field, wearing a red shirt and shorts. He is holding a camera, possibly preparing to take a photograph or record a video. The man appears to be enjoying his time outdoors, surrounded by the natural environment.
 ```
+
+> The image features a man standing in a field, wearing a red shirt and shorts. He is holding a camera, possibly preparing to take a photograph or record a video. The man appears to be enjoying his time outdoors, surrounded by the natural environment.
 
 ![sample](./cloudflare/docs/IMG_7452.1200w.jpg)
