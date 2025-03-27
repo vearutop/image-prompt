@@ -112,7 +112,6 @@ func (ip *ImagePrompter) pp(cfg Config) (prompter, error) {
 
 	sem, _ := ip.prompterSemaphore.Load(provider)
 	if sem == nil {
-
 		sem = make(chan struct{}, provider.Concurrency)
 		ip.prompterSemaphore.Store(provider, sem)
 	} else if cap(sem) != provider.Concurrency {
@@ -127,10 +126,6 @@ func (ip *ImagePrompter) pp(cfg Config) (prompter, error) {
 	}
 
 	return prompter{prompt: prompt, p: provider, sem: sem}, nil
-}
-
-func (p Provider) string() string {
-	return string(p.Type) + p.AuthKey + p.Model + p.BaseURL
 }
 
 func (p Provider) prompter() (imageprompt.Prompter, error) {
@@ -205,20 +200,31 @@ func (m *smap[K, V]) Load(key K) (value V, ok bool) {
 	if !ok {
 		return value, ok
 	}
-	return v.(V), ok
+
+	return v.(V), ok //nolint:errcheck
 }
+
 func (m *smap[K, V]) LoadAndDelete(key K) (value V, loaded bool) {
 	v, loaded := m.m.LoadAndDelete(key)
 	if !loaded {
 		return value, loaded
 	}
-	return v.(V), loaded
+
+	return v.(V), loaded //nolint:errcheck
 }
+
 func (m *smap[K, V]) LoadOrStore(key K, value V) (actual V, loaded bool) {
 	a, loaded := m.m.LoadOrStore(key, value)
-	return a.(V), loaded
+
+	return a.(V), loaded //nolint:errcheck
 }
+
 func (m *smap[K, V]) Range(f func(key K, value V) bool) {
-	m.m.Range(func(key, value any) bool { return f(key.(K), value.(V)) })
+	m.m.Range(func(key, value any) bool {
+		return f(key.(K), value.(V)) //nolint:errcheck
+	})
 }
-func (m *smap[K, V]) Store(key K, value V) { m.m.Store(key, value) }
+
+func (m *smap[K, V]) Store(key K, value V) {
+	m.m.Store(key, value)
+}
