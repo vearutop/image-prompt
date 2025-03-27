@@ -35,10 +35,11 @@ func (p ProviderType) Enum() []any {
 
 // Provider describes LLM service.
 type Provider struct {
-	Type    ProviderType `json:"type" title:"Type of provider"`
-	AuthKey string       `json:"auth_key,omitempty" title:"Auth/API key when applicable"`
-	BaseURL string       `json:"base_url,omitempty" title:"Base URL (for cloudflare, ollama)"`
-	Model   string       `json:"model,omitempty" title:"Model"`
+	Type        ProviderType `json:"type" title:"Type of provider"`
+	AuthKey     string       `json:"auth_key,omitempty" title:"Auth/API key when applicable"`
+	BaseURL     string       `json:"base_url,omitempty" title:"Base URL (for cloudflare, ollama)"`
+	Model       string       `json:"model,omitempty" title:"Model"`
+	Concurrency int          `json:"concurrency,omitempty" title:"Max request concurrency" default:"1"`
 }
 
 // Config defines prompts and services.
